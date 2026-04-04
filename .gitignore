@@ -43,3 +43,12 @@ htmlcov/
 # Distribution
 *.tar.gz
 *.zip
+.cursor/
+
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.*
+!.env.example
