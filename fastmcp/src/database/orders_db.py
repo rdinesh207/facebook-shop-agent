@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.database.supabase_client import get_client
+from src.database.insforge_client import get_client
 
 
 def upsert_order(

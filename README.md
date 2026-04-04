@@ -1,214 +1,153 @@
-# Facebook Shop MCP Agent
+# 🤖 Facebook Shop Agent
 
-An AI agent built with **FastMCP** and **LangChain** that manages Facebook Shops via the Meta Business SDK and persists all data to **Supabase**.
-
----
-
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Chat Client  (agent.py  or  Cursor / Claude via MCP)       │
-└────────────────────────┬────────────────────────────────────┘
-                         │  LangChain ReAct Agent (GPT-4o)
-                         │  langchain-mcp-adapters
-                         ▼
-┌─────────────────────────────────────────────────────────────┐
-│  FastMCP Server  (server.py)                                │
-│                                                             │
-│  Tools exposed:                                             │
-│   create_shop          get_shop_info                        │
-│   create_product_listing  list_products  get_product        │
-│   list_orders          get_order        is_product_sold     │
-└──────────────┬───────────────────────────┬──────────────────┘
-               │                           │
-               ▼                           ▼
-   Meta Business SDK               Supabase (iymskhtltqfyshbfrlyc)
-   (facebook_business)             Tables: shops · products
-   Graph API v25.0                         orders · order_items
-```
+A state-of-the-art AI agent designed to manage Facebook Shops with ease. Built with **FastMCP**, **LangChain**, and **FastAPI**, it features a stunning glassmorphic dashboard and seamless integration with the Meta Business SDK and Supabase.
 
 ---
 
-## Prerequisites
+## 📺 Demo
+![Facebook Shop Agent Demo](Demo.mp4)
 
+---
+
+## 🚀 Key Features
+
+*   **Natural Language Management**: Create products, list orders, and manage shops using an AI assistant.
+*   **Secure OAuth Integration**: Robust Facebook Login flow for secure asset management.
+*   **High-Performance Backend**: Powered by FastAPI with asynchronous MCP tool execution.
+*   **Premium Dashboard**: A modern, responsive UI with a glassmorphism aesthetic.
+*   **Robust Data Persistence**: Real-time sync with Supabase for reliable data caching and retrieval.
+*   **Multi-modal Capabilities**: Support for image-based product interactions via GPT-4o.
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+graph TD
+    subgraph "Frontend (Vite + Vanilla JS)"
+        UI[Glassmorphic Dashboard]
+        Auth[Facebook OAuth]
+    end
+
+    subgraph "Backend (FastAPI)"
+        API[Chat Endpoint]
+        Agent[LangChain ReAct Agent]
+    end
+
+    subgraph "FastMCP Server"
+        Tools[MCP Tools]
+        MetaSDK[Meta Business SDK]
+    end
+
+    DB[(Supabase)]
+
+    UI <--> API
+    API <--> Agent
+    Agent <--> Tools
+    Tools <--> MetaSDK
+    Tools <--> DB
+    Auth <--> MetaSDK
+```
+
+---
+
+## 📁 Project Structure
+
+```text
+facebook-shop-agent/
+├── 📱 frontend/              # Vite-powered SPA with glassmorphic UI
+│   ├── js/                   # Auth, API, and View logic
+│   └── css/                  # Premium design system
+├── ⚙️ backend/               # FastAPI service orchestrating the AI Agent
+│   └── main.py               # Main API entry point
+├── ⚡ fastmcp/               # FastMCP server & tools
+│   ├── server.py             # Tool definitions (Meta SDK + Supabase)
+│   ├── agent.py              # CLI version of the LangChain agent
+│   └── src/                  # Core logic, database, and Meta SDK wrappers
+└── 🎥 Demo.mp4               # Project demonstration video
+```
+
+---
+
+## 🛠️ Quick Start
+
+### 1. Prerequisites
 - Python 3.11+
-- A [Meta for Developers](https://developers.facebook.com) app with the following permissions:
-  - `catalog_management`
-  - `pages_read_engagement`
-  - `commerce` (for orders)
-- A Facebook Page linked to a Commerce Account
-- A [Supabase](https://supabase.com) project (ID: `iymskhtltqfyshbfrlyc`)
-- An OpenAI API key
+- Node.js & npm (for Frontend)
+- Meta Developer App (with `catalog_management`, `commerce`, `pages_read_engagement` permissions)
+- Supabase Project
+- OpenAI API Key
 
----
-
-## Installation
-
+### 2. Backend & FastMCP Setup
 ```bash
+# Clone the repository
 git clone https://github.com/rdinesh207/facebook-shop-agent
 cd facebook-shop-agent
-python -m venv .venv
-# Windows:
-.venv\Scripts\activate
-# macOS / Linux:
-source .venv/bin/activate
 
+# Setup virtual environment
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# Install dependencies for FastMCP
 cd fastmcp
+pip install -r requirements.txt
+
+# Configure environment variables
+cp .env.example .env
+# Edit .env with your Meta, Supabase, and OpenAI keys
+
+# Setup Database
+python setup_db.py
+
+# Install Backend dependencies
+cd ../backend
 pip install -r requirements.txt
 ```
 
----
-
-## Configuration
-
-Copy the example env file and fill in your credentials:
-
+### 3. Frontend Setup
 ```bash
-# From inside the fastmcp/ folder:
-cp .env.example .env
+cd ../frontend
+npm install
+# Configure js/config.js with your Facebook App ID and Backend URL
 ```
 
-Open `fastmcp/.env` and set:
-
-| Variable | Description |
-|---|---|
-| `FACEBOOK_ACCESS_TOKEN` | Long-lived user / system-user token |
-| `FACEBOOK_APP_ID` | Your Meta App ID |
-| `FACEBOOK_APP_SECRET` | Your Meta App Secret |
-| `FACEBOOK_PAGE_ID` | Facebook Page ID linked to your Shop |
-| `FACEBOOK_BUSINESS_ID` | Meta Business Manager ID |
-| `FACEBOOK_CATALOG_ID` | (Optional) Pre-existing catalog ID |
-| `SUPABASE_URL` | `https://iymskhtltqfyshbfrlyc.supabase.co` |
-| `SUPABASE_ANON_KEY` | Supabase anon/public key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (for server-side writes) |
-| `SUPABASE_DB_PASSWORD` | Database password (used by `setup_db.py`) |
-| `OPENAI_API_KEY` | OpenAI API key |
-
-All keys are available in your [Supabase Dashboard → Project Settings → API](https://supabase.com/dashboard/project/iymskhtltqfyshbfrlyc/settings/api).
-
 ---
 
-## Database Setup
+## 🏃 Running the Application
 
-From the `fastmcp/` folder, run the migration script to create all required tables:
+### Option A: The Full Stack (Recommended)
+1.  **Start the Backend**:
+    ```bash
+    cd backend
+    python main.py
+    ```
+2.  **Start the Frontend**:
+    ```bash
+    cd frontend
+    npm run dev
+    ```
+3.  Open `http://localhost:5173` to access the dashboard.
 
-```bash
-cd fastmcp
-python setup_db.py
-```
-
-If `SUPABASE_DB_PASSWORD` is set, the script connects directly and applies the migration. Otherwise, it prints instructions for applying the SQL manually in the Supabase Dashboard.
-
-Alternatively, open the [Supabase SQL Editor](https://supabase.com/dashboard/project/iymskhtltqfyshbfrlyc/sql/new) and paste the contents of `fastmcp/migrations/001_create_facebook_shop_tables.sql`.
-
----
-
-## Running
-
-All commands below are run from the `fastmcp/` folder.
-
-### Option A — Interactive Chat Agent (inline, single process)
-
-The agent spawns the MCP server automatically:
-
+### Option B: FastMCP CLI Agent
 ```bash
 cd fastmcp
 python agent.py --inline
 ```
 
-### Option B — MCP Server + Agent (two processes)
-
-Start the MCP server in HTTP mode:
-
-```bash
-cd fastmcp
-python server.py --transport streamable-http
-```
-
-In a separate terminal, start the agent:
-
-```bash
-cd fastmcp
-python agent.py
-```
-
-### Option C — Use as an MCP Server in Cursor / Claude Desktop
-
-Add the following to your MCP client configuration:
-
-```json
-{
-  "mcpServers": {
-    "facebook-shop": {
-      "command": "python",
-      "args": ["server.py"],
-      "cwd": "/path/to/facebook-shop-agent/fastmcp",
-      "env": {
-        "PYTHONPATH": "/path/to/facebook-shop-agent/fastmcp"
-      }
-    }
-  }
-}
-```
-
 ---
 
-## Available MCP Tools
+## 🧰 Available AI Tools
 
 | Tool | Description |
-|---|---|
-| `create_shop` | Create a new Facebook Shop (product catalog) and save to DB |
-| `get_shop_info` | Get metadata and product count for a catalog |
-| `create_product_listing` | Add a product to a catalog, persist to DB |
-| `list_products` | List products in a catalog, optionally sync to DB |
-| `get_product` | Fetch a single product's details |
-| `list_orders` | List Facebook Commerce orders, optionally sync to DB |
-| `get_order` | Fetch a single order with line items |
-| `is_product_sold` | Check if a product has been purchased (live API or DB cache) |
+| :--- | :--- |
+| `create_shop` | Create a new Facebook Shop (product catalog) |
+| `get_shop_info` | Retrieve metadata and product counts |
+| `create_product_listing` | Add new products to a catalog |
+| `list_products` | List and sync products to the database |
+| `list_orders` | Manage and sync Facebook Commerce orders |
+| `is_product_sold` | Check real-time purchase status of items |
 
 ---
 
-## Project Structure
-
-```
-facebook-shop-agent/
-├── .gitignore
-├── README.md
-├── backend/                          Future backend service
-├── frontend/                         Future frontend
-└── fastmcp/                          ← All MCP server code lives here
-    ├── .env.example                  Template for environment variables
-    ├── requirements.txt
-    ├── server.py                     FastMCP server — defines all 8 tools
-    ├── agent.py                      LangChain chat agent (GPT-4o + MCP tools)
-    ├── setup_db.py                   One-time database migration script
-    ├── migrations/
-    │   └── 001_create_facebook_shop_tables.sql
-    └── src/
-        ├── config.py                 Loads and validates all env vars
-        ├── facebook/
-        │   ├── client.py             Meta Business SDK initialisation
-        │   ├── shops.py              Catalog (shop) create / fetch
-        │   ├── products.py           Product CRUD via SDK
-        │   └── orders.py             Orders and sale status via Graph API
-        └── database/
-            ├── supabase_client.py    Supabase singleton client
-            ├── shops_db.py           shops table CRUD
-            ├── products_db.py        products table CRUD
-            └── orders_db.py          orders + order_items CRUD
-```
-
----
-
-## Notes
-
-- **Facebook User Token**: `FACEBOOK_ACCESS_TOKEN` is currently read from `.env`. A future frontend integration will supply it dynamically per user session.
-- **Order API permissions**: Listing orders requires the `commerce` permission on the page token and a connected Commerce Account.
-- **Rate limits**: Facebook Graph API enforces rate limits. Use `sync_to_db=True` on `list_products` and `list_orders` to cache data locally and reduce API calls.
-
----
-
-## License
-
-MIT
+## 🛡️ License
+MIT License. See [LICENSE](LICENSE) for details.
