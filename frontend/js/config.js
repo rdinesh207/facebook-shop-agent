@@ -27,7 +27,6 @@ export const CONFIG = {
    * Restored for End-to-End Shop Agent functionality.
    */
   SCOPES: [
-    'email',
     'public_profile',
     'pages_show_list',
     'pages_read_engagement',
