@@ -75,10 +75,6 @@ export function renderDashboard(container, authData) {
             </div>
           </div>
           
-          <div class="sidebar-section">
-            <h4>SESSION TOKEN</h4>
-            <div class="sidebar-token">${access_token || 'missing'}</div>
-          </div>
         </aside>
 
         <!-- Main Chat Canvas -->
@@ -120,20 +116,18 @@ export function renderDashboard(container, authData) {
 
   // — Event Listeners —
 
-  // Logout - using direct onclick to override any UI event blocking
+  // Logout - instant native disconnect for prod-level UX (bypasses browser alert blocking)
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn) {
     logoutBtn.onclick = function(e) {
       e.preventDefault();
-      if (confirm('Disconnect your Facebook account?')) {
-        // Absolutely guarantee the token is removed
-        localStorage.removeItem('fb_shop_auth');
-        localStorage.clear(); // Clear anything else just in case
-        
-        // Force an immediate hash clear and hard reload
-        window.location.hash = '';
-        window.location.reload();
-      }
+      
+      // Guarantee destruction of the session
+      localStorage.removeItem('fb_shop_auth');
+      
+      // Force an immediate hash clear and hard reload
+      window.location.hash = '';
+      window.location.reload();
     };
   }
 

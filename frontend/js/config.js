@@ -11,10 +11,9 @@
 export const CONFIG = {
   /**
    * Your Facebook Developer App ID.
-   * Find it at: https://developers.facebook.com/apps/
-   * Leave as-is to see the setup guide in the UI.
+   * Pulled from the local .env file.
    */
-  FACEBOOK_APP_ID: '547731668090451',
+  FACEBOOK_APP_ID: import.meta.env.VITE_FACEBOOK_APP_ID,
 
   /**
    * The URL Facebook will redirect back to after login.
@@ -28,7 +27,6 @@ export const CONFIG = {
    * Restored for End-to-End Shop Agent functionality.
    */
   SCOPES: [
-    'email',
     'public_profile',
     'pages_show_list',
     'pages_read_engagement',
