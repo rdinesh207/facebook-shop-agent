@@ -22,12 +22,17 @@ const SEND_ICON = `
     <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
   </svg>`;
 
+const ATTACH_ICON = `
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+  </svg>`;
+
 function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 /* Chat Bubble Renderer */
-function createMessage(content, role = 'bot') {
+function createMessage(content, role = 'bot', imageUrl = null) {
   const isUser = role === 'user';
   const icon = isUser ? USER_ICON : BOT_ICON;
   const bubbleClass = isUser ? 'chat-bubble-user' : 'chat-bubble-bot';
@@ -35,9 +40,16 @@ function createMessage(content, role = 'bot') {
 
   const div = document.createElement('div');
   div.className = `chat-msg ${wrapCls}`;
+  
+  let mediaHtml = '';
+  if (imageUrl) {
+    mediaHtml = `<div class="chat-media"><img src="${imageUrl}" class="chat-img-preview" /></div>`;
+  }
+
   div.innerHTML = `
     <div class="chat-avatar ${role}-avatar">${icon}</div>
     <div class="chat-bubble ${bubbleClass}">
+      ${mediaHtml}
       <div class="chat-text">${content}</div>
     </div>
   `;
@@ -103,7 +115,12 @@ export function renderDashboard(container, authData) {
 
           <!-- Chat Input Area -->
           <div class="chat-input-wrapper">
+            <div id="image-preview-container" class="image-preview-container" style="display: none;">
+               <!-- Preview injected here -->
+            </div>
             <div class="chat-input-box">
+              <button id="attach-btn" class="attach-btn" title="Attach Image">${ATTACH_ICON}</button>
+              <input type="file" id="image-upload" accept="image/*" style="display: none;">
               <textarea id="prompt-input" rows="1" placeholder="Send a message to the agent..."></textarea>
               <button id="send-prompt-btn" aria-label="Send" class="send-btn">${SEND_ICON}</button>
             </div>
@@ -134,10 +151,17 @@ export function renderDashboard(container, authData) {
   const chatContainer = document.getElementById('chat-messages');
   const textarea = document.getElementById('prompt-input');
   const sendBtn = document.getElementById('send-prompt-btn');
+  const attachBtn = document.getElementById('attach-btn');
+  const imageUpload = document.getElementById('image-upload');
+  const previewContainer = document.getElementById('image-preview-container');
+  
+  const chatHistory = []; // Track chat history for the session
+  let pendingImageBase64 = null;
+  let pendingImageUrl = null;
 
-  function appendUserMessage(text) {
-    if (!text.trim()) return;
-    const msg = createMessage(escapeHtml(text), 'user');
+  function appendUserMessage(text, imageUrl = null) {
+    if (!text.trim() && !imageUrl) return;
+    const msg = createMessage(escapeHtml(text), 'user', imageUrl);
     chatContainer.appendChild(msg);
     scrollToBottom();
   }
@@ -155,25 +179,92 @@ export function renderDashboard(container, authData) {
   // Handle Form Submission
   async function submitPrompt() {
     const text = textarea.value;
-    if (!text.trim()) return;
+    if (!text.trim() && !pendingImageBase64) return;
     
-    // 1. Show user message
+    // Capture current pending image
+    const currentImageUrl = pendingImageUrl;
+    const currentImageBase64 = pendingImageBase64;
+    
+    // 1. Show user message and clear input
     textarea.value = '';
     textarea.style.height = 'auto'; // reset height
-    appendUserMessage(text);
     
-    // 2. Simulate AI thinking...
+    // Clear preview
+    pendingImageBase64 = null;
+    pendingImageUrl = null;
+    previewContainer.style.display = 'none';
+    previewContainer.innerHTML = '';
+    
+    appendUserMessage(text, currentImageUrl);
+    
+    // 2. Show thinking indicator
     const botTyping = createMessage('<span class="typing-indicator">...</span>', 'bot');
     chatContainer.appendChild(botTyping);
     scrollToBottom();
 
-    await new Promise(r => setTimeout(r, 800));
+    try {
+      // 3. Call actual backend
+      const response = await fetch('http://localhost:8000/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: text,
+          history: chatHistory,
+          image: currentImageBase64
+        })
+      });
 
-    // 3. Remove typing, show response
-    botTyping.remove();
-    appendBotMessage(`<p>I've noted your request regarding "<em>${escapeHtml(text)}</em>".</p>
-                      <p>Since the backend integration is pending, I can't fulfill this Graph API action yet, but your token is ready to send this request!</p>`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Backend unavailable');
+      }
+      
+      const data = await response.json();
+      
+      // 4. Update history and UI
+      botTyping.remove();
+      chatHistory.push({ role: 'user', content: text });
+      chatHistory.push({ role: 'assistant', content: data.response });
+      
+      appendBotMessage(data.response);
+    } catch (err) {
+      botTyping.remove();
+      appendBotMessage(`<p style="color: #ef4444;"><strong>Error:</strong> ${err.message}. Make sure the backend is running at localhost:8000.</p>`);
+    }
   }
+
+  // Handle Image Upload
+  attachBtn?.addEventListener('click', () => imageUpload.click());
+
+  imageUpload?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      pendingImageUrl = event.target.result;
+      // Extract base64 without prefix for the backend
+      pendingImageBase64 = event.target.result.split(',')[1];
+
+      // Show preview
+      previewContainer.style.display = 'flex';
+      previewContainer.innerHTML = `
+        <div class="preview-item">
+          <img src="${pendingImageUrl}" />
+          <button class="remove-preview-btn">✕</button>
+        </div>
+      `;
+
+      previewContainer.querySelector('.remove-preview-btn').onclick = () => {
+        pendingImageBase64 = null;
+        pendingImageUrl = null;
+        previewContainer.style.display = 'none';
+        previewContainer.innerHTML = '';
+        imageUpload.value = '';
+      };
+    };
+    reader.readAsDataURL(file);
+  });
 
   sendBtn?.addEventListener('click', submitPrompt);
 

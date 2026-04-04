@@ -56,7 +56,19 @@ def create_shop(
     return {**catalog, "db_id": saved.get("id")}
 
 
-# ── Tool 2: get_shop_info ──────────────────────────────────────────────────────
+# ── Tool 2: list_shops ─────────────────────────────────────────────────────────
+
+@mcp.tool
+def list_shops() -> list[dict[str, Any]]:
+    """
+    List all Facebook Shops (product catalogs) owned by the configured Business.
+    Returns a list of shops with their fb_catalog_id, name, and product_count.
+    Useful for seeing which shops can be synced or managed.
+    """
+    return fb_shops.list_catalogs()
+
+
+# ── Tool 3: get_shop_info ──────────────────────────────────────────────────────
 
 @mcp.tool
 def get_shop_info(
@@ -80,8 +92,8 @@ def create_product_listing(
     description: Annotated[str, "Product description"],
     price: Annotated[float, "Price in full currency units (e.g. 29.99 for $29.99)"],
     currency: Annotated[str, "ISO 4217 currency code, e.g. USD"] = "USD",
-    image_url: Annotated[str, "Publicly accessible URL of the product image"] = "",
-    product_url: Annotated[str, "URL of the product page"] = "",
+    image_url: Annotated[str, "Publicly accessible URL of the product image (optional)"] = "",
+    product_url: Annotated[str, "URL of the product page (optional)"] = "",
     availability: Annotated[
         str,
         "One of: 'in stock', 'out of stock', 'preorder', 'available for order'",
@@ -95,14 +107,18 @@ def create_product_listing(
     Create a new product listing inside a Facebook Shop catalog
     and persist it to the Supabase database.
     """
+    # Facebook requires these, so provide placeholders if empty
+    fallback_image = "https://placehold.co/600x400?text=No+Image+Available"
+    fallback_url = "https://www.facebook.com"
+
     product = fb_products.create_product(
         catalog_id=catalog_id,
         name=name,
         description=description,
         price=price,
         currency=currency,
-        image_url=image_url,
-        product_url=product_url,
+        image_url=image_url or fallback_image,
+        product_url=product_url or fallback_url,
         availability=availability,
         retailer_id=retailer_id or None,
     )
@@ -114,8 +130,8 @@ def create_product_listing(
         price=price,
         currency=currency,
         availability=availability,
-        image_url=image_url,
-        product_url=product_url,
+        image_url=product["image_url"],
+        product_url=product["product_url"],
     )
     return {**product, "db_id": saved.get("id")}
 
@@ -254,6 +270,31 @@ def is_product_sold(
     )
     result["source"] = "facebook_api"
     return result
+
+
+# ── Tool 9: analyze_image ──────────────────────────────────────────────────────
+
+@mcp.tool
+def analyze_image(
+    image_base64: Annotated[str, "Base64 encoded image data (without prefix)"],
+) -> dict[str, Any]:
+    """
+    Process an image provided by the user. 
+    This tool simulates image analysis (e.g. OCR, object detection) 
+    and returns metadata about the image.
+    """
+    # In a real scenario, we might use a library like Piti or an external API.
+    # For now, we return a mock analysis.
+    return {
+        "status": "success",
+        "message": "Image received and analyzed by FastMCP.",
+        "details": {
+            "is_product": True,
+            "detected_objects": ["unknown product"],
+            "suggested_price_range": "20.00 - 50.00",
+            "data_size": len(image_base64)
+        }
+    }
 
 
 # ── Entry point ────────────────────────────────────────────────────────────────
