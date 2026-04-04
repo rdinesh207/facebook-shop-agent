@@ -1148,3 +1148,83 @@ a  { color: inherit; text-decoration: none; }
 }
 .suggestion-btn:hover { background: var(--fb-blue-subtle); color: #fff; }
 
+/* ── 12. Image Upload & Preview ────────────────────────────── */
+.chat-input-box {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+}
+
+.attach-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.attach-btn:hover {
+  color: var(--fb-blue-light);
+}
+
+.image-preview-container {
+  padding: 10px 16px;
+  display: flex;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid var(--bg-glass-border);
+}
+
+.preview-item {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  border: 1px solid var(--fb-blue-light);
+}
+
+.preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-preview-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-preview-btn:hover {
+  background: var(--error);
+}
+
+.chat-media {
+  margin-bottom: 8px;
+  max-width: 300px;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  border: 1px solid var(--bg-glass-border);
+}
+
+.chat-img-preview {
+  display: block;
+  width: 100%;
+  height: auto;
+}

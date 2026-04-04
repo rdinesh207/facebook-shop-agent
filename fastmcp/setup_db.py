@@ -10,6 +10,7 @@ Project Settings → Database → Connection string).
 """
 import os
 import sys
+import urllib.parse
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -24,10 +25,21 @@ def _get_dsn() -> str:
     password = os.getenv("SUPABASE_DB_PASSWORD")
     if not password:
         return ""
-    return (
-        f"postgresql://postgres:{password}"
-        f"@db.{PROJECT_ID}.supabase.co:5432/postgres"
-    )
+        
+    # URL-encode the password to handle special characters (@, :, etc.)
+    encoded_pw = urllib.parse.quote_plus(password)
+    
+    # Extract project ID from SUPABASE_URL (e.g. https://np6u5abf.us-west.insforge.app)
+    supabase_url = os.getenv("SUPABASE_URL", "")
+    if "insforge.app" in supabase_url:
+        # Try the project domain directly as the DB host
+        host = supabase_url.split("//")[-1] 
+    else:
+        # Standard Supabase fallback
+        project_id = "iymskhtltqfyshbfrlyc" 
+        host = f"db.{project_id}.supabase.co"
+
+    return f"postgresql://postgres:{encoded_pw}@{host}:5432/postgres"
 
 
 def apply_via_psycopg2(dsn: str, sql: str) -> None:

@@ -36,7 +36,6 @@ def create_catalog(name: str, description: str = "") -> dict[str, Any]:
         ],
         params={
             "name": name,
-            "da_display_settings": {"carousel_ad_show_price": True},
         },
     )
 
@@ -73,3 +72,32 @@ def get_catalog_info(catalog_id: str) -> dict[str, Any]:
         "name": catalog[ProductCatalog.Field.name],
         "product_count": catalog.get(ProductCatalog.Field.product_count, 0),
     }
+
+
+def list_catalogs() -> list[dict[str, Any]]:
+    """
+    List all product catalogs owned by the configured Business.
+
+    Returns:
+        List of dicts with catalog metadata.
+    """
+    get_api()
+
+    business = Business(config.FACEBOOK_BUSINESS_ID)
+    catalogs = business.get_owned_product_catalogs(
+        fields=[
+            ProductCatalog.Field.id,
+            ProductCatalog.Field.name,
+            ProductCatalog.Field.product_count,
+        ]
+    )
+
+    results = []
+    for c in catalogs:
+        results.append({
+            "fb_catalog_id": c[ProductCatalog.Field.id],
+            "name": c[ProductCatalog.Field.name],
+            "product_count": c.get(ProductCatalog.Field.product_count, 0),
+        })
+
+    return results
