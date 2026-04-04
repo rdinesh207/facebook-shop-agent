@@ -102,15 +102,17 @@ def list_products(catalog_id: str, limit: int = 50) -> list[dict[str, Any]]:
         ],
         params={"limit": limit},
     )
-
     results = []
     for item in items:
+        raw_price = str(item.get(ProductItem.Field.price, "0"))
+        clean_price = "".join(c for c in raw_price if c.isdigit() or c == ".")
+        
         results.append({
             "fb_product_id": item.get(ProductItem.Field.id, ""),
             "catalog_id": catalog_id,
             "name": item.get(ProductItem.Field.name, ""),
             "description": item.get(ProductItem.Field.description, ""),
-            "price": item.get(ProductItem.Field.price, 0) / 100,
+            "price": float(clean_price) / 100 if clean_price else 0.0,
             "currency": item.get(ProductItem.Field.currency, "USD"),
             "availability": item.get(ProductItem.Field.availability, ""),
             "image_url": item.get(ProductItem.Field.image_url, ""),
@@ -145,11 +147,14 @@ def get_product(product_id: str) -> dict[str, Any]:
         ]
     )
 
+    raw_price = str(item.get(ProductItem.Field.price, "0"))
+    clean_price = "".join(c for c in raw_price if c.isdigit() or c == ".")
+    
     return {
         "fb_product_id": item.get(ProductItem.Field.id, ""),
         "name": item.get(ProductItem.Field.name, ""),
         "description": item.get(ProductItem.Field.description, ""),
-        "price": item.get(ProductItem.Field.price, 0) / 100,
+        "price": float(clean_price) / 100 if clean_price else 0.0,
         "currency": item.get(ProductItem.Field.currency, "USD"),
         "availability": item.get(ProductItem.Field.availability, ""),
         "image_url": item.get(ProductItem.Field.image_url, ""),

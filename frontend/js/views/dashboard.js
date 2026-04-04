@@ -40,7 +40,7 @@ function createMessage(content, role = 'bot', imageUrl = null) {
 
   const div = document.createElement('div');
   div.className = `chat-msg ${wrapCls}`;
-  
+
   let mediaHtml = '';
   if (imageUrl) {
     mediaHtml = `<div class="chat-media"><img src="${imageUrl}" class="chat-img-preview" /></div>`;
@@ -136,12 +136,12 @@ export function renderDashboard(container, authData) {
   // Logout - instant native disconnect for prod-level UX (bypasses browser alert blocking)
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn) {
-    logoutBtn.onclick = function(e) {
+    logoutBtn.onclick = function (e) {
       e.preventDefault();
-      
+
       // Guarantee destruction of the session
       localStorage.removeItem('fb_shop_auth');
-      
+
       // Force an immediate hash clear and hard reload
       window.location.hash = '';
       window.location.reload();
@@ -154,7 +154,7 @@ export function renderDashboard(container, authData) {
   const attachBtn = document.getElementById('attach-btn');
   const imageUpload = document.getElementById('image-upload');
   const previewContainer = document.getElementById('image-preview-container');
-  
+
   const chatHistory = []; // Track chat history for the session
   let pendingImageBase64 = null;
   let pendingImageUrl = null;
@@ -180,23 +180,23 @@ export function renderDashboard(container, authData) {
   async function submitPrompt() {
     const text = textarea.value;
     if (!text.trim() && !pendingImageBase64) return;
-    
+
     // Capture current pending image
     const currentImageUrl = pendingImageUrl;
     const currentImageBase64 = pendingImageBase64;
-    
+
     // 1. Show user message and clear input
     textarea.value = '';
     textarea.style.height = 'auto'; // reset height
-    
+
     // Clear preview
     pendingImageBase64 = null;
     pendingImageUrl = null;
     previewContainer.style.display = 'none';
     previewContainer.innerHTML = '';
-    
+
     appendUserMessage(text, currentImageUrl);
-    
+
     // 2. Show thinking indicator
     const botTyping = createMessage('<span class="typing-indicator">...</span>', 'bot');
     chatContainer.appendChild(botTyping);
@@ -218,14 +218,14 @@ export function renderDashboard(container, authData) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.detail || 'Backend unavailable');
       }
-      
+
       const data = await response.json();
-      
+
       // 4. Update history and UI
       botTyping.remove();
       chatHistory.push({ role: 'user', content: text });
       chatHistory.push({ role: 'assistant', content: data.response });
-      
+
       appendBotMessage(data.response);
     } catch (err) {
       botTyping.remove();
